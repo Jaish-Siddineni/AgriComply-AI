@@ -2,14 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api'; 
 import axios from 'axios';
-import { useVault } from '../contexts/VaultContext'; // <--- 1. Import Vault Context
+import { useVault } from '../contexts/VaultContext';
 
 const LoanCalculator = () => {
     const navigate = useNavigate();
     const { state } = useLocation();
     const schemeData = state?.scheme || null;
     
-    // 2. Try to get docs from Context first (Faster & Safer)
+    // 1. Get docs from Context
     const { documents: contextDocs } = useVault() || { documents: [] };
 
     const [formData, setFormData] = useState({
@@ -22,35 +22,39 @@ const LoanCalculator = () => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
 
-    // 3. Load Documents (Context + Fallback API)
+    // 2. Load Documents (Context + Fallback API)
     useEffect(() => {
         const loadDocs = async () => {
-            // Option A: Use Context if available (Best for preventing 404s)
             if (contextDocs && contextDocs.length > 0) {
                 console.log("Loaded docs from Context:", contextDocs.length);
                 setFoundDocs(mapDocs(contextDocs));
                 return;
             }
 
-            // Option B: API Backup (Corrected URL: Removed '/documents')
             try {
                 console.log("Context empty, fetching from API...");
-                const res = await api.get('/vault'); // <--- CHANGED FROM '/vault/documents'
+                const res = await api.get('/vault');
                 setFoundDocs(mapDocs(res.data));
             } catch (err) {
                 console.error("API Fetch failed:", err);
-                // Even if it fails, don't crash. Just show 0 docs.
             }
         };
         loadDocs();
     }, [contextDocs]);
 
-    // Helper to extract clean tags
+    // 3. Helper to extract tags AND actual OCR Data (CRITICAL FIX)
     const mapDocs = (docs) => {
-        return (docs || []).map(d => ({
-            tag: d.tag || d.type || d.classification?.type || "Unknown",
-            filename: d.filename
-        }));
+        return (docs || []).map(d => {
+            // Check where your backend stores the OCR JSON. Often it's in 'extracted_data' or 'content'
+            const rawData = d.extracted_data || d.parsed_text || d.content || "Data not available";
+            
+            return {
+                tag: d.tag || d.type || d.classification?.type || "Unknown",
+                filename: d.filename,
+                // Stringify the JSON so it travels safely over HTTP to Python
+                extracted_data: typeof rawData === 'object' ? JSON.stringify(rawData) : rawData
+            };
+        });
     };
 
     const handleChange = (e) => {
@@ -63,11 +67,9 @@ const LoanCalculator = () => {
         setLoading(true);
         setResult(null);
         
-        // Ensure this matches your Python Port
         const ML_URL = 'http://localhost:5001/growth/advanced-check';
 
         try {
-            // Send the 'foundDocs' we loaded earlier
             console.log("Sending docs to AI:", foundDocs); 
             
             const res = await axios.post(ML_URL, {
@@ -104,7 +106,6 @@ const LoanCalculator = () => {
                     </p>
                 </div>
                 
-                {/* Document Counter Badge */}
                 <div className={`px-4 py-2 rounded-lg border ${foundDocs.length > 0 ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
                     <span className="font-bold text-lg">{foundDocs.length}</span> Documents Found
                 </div>
@@ -152,7 +153,7 @@ const LoanCalculator = () => {
                                 <option value="Any Bank or NBFC" />
                                 <option value="State Bank of India (SBI)" />
                                 <option value="HDFC Bank" />
-                                <option value="Bajaj Finance" />
+                                <option value="Punjab National Bank" />
                             </datalist>
                         </div>
 
@@ -165,7 +166,6 @@ const LoanCalculator = () => {
                         </button>
                     </div>
 
-                    {/* Debug List - This MUST show tags now */}
                     {foundDocs.length > 0 && (
                         <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 text-sm">
                             <p className="font-bold text-gray-500 mb-2 uppercase text-xs tracking-wider">Vault Inventory (Sending to AI)</p>
@@ -199,9 +199,9 @@ const LoanCalculator = () => {
 
                         {result && (
                             <div className="animate-fade-in">
-                                <div className={`p-4 rounded-lg mb-4 text-center ${result.eligible ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-orange-50 text-orange-800 border border-orange-200'}`}>
+                                <div className={`p-4 rounded-lg mb-4 text-center ${result.eligible ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`}>
                                     <h2 className="text-xl font-bold">
-                                        {result.eligible ? 'High Chance' : 'Conditional'}
+                                        {result.eligible ? 'High Chance' : 'Not Eligible'}
                                     </h2>
                                     <p className="text-xs font-bold mt-1 opacity-80">{result.confidence_score}% Confidence</p>
                                 </div>
