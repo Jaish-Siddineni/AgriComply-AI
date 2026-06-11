@@ -14,7 +14,7 @@ const app = express();
 // ONLY allow requests from your Vercel frontend and your local testing environment
 app.use(cors({
   origin: [
-    'https://your-agricomply-ai.vercel.app', // <-- REPLACE THIS WITH YOUR ACTUAL VERCEL URL
+    'https://agri-comply-ai.vercel.app',     // <-- Your actual live Vercel URL
     'http://localhost:5173',                 // Allows your local Vite server to still work
     'http://localhost:3000'                  // Fallback local port
   ],
