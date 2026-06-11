@@ -5,7 +5,7 @@ import torch
 import hashlib
 import cv2
 import base64
-import google.generativeai as genai
+from google import genai
 from difflib import SequenceMatcher
 from statistics import mean, variance
 from dotenv import load_dotenv
