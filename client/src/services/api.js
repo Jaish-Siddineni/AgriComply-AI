@@ -1,8 +1,11 @@
 import axios from 'axios';
 
+// Dynamically grab the Vercel cloud URL, or fallback to localhost for local testing
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
 // Create the axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Make sure this matches your backend port
+  baseURL: `${API_BASE_URL}/api`, 
 });
 
 // Add a Request Interceptor
