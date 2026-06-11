@@ -11,7 +11,16 @@ const trackBRoutes = require('./routes/trackBRoutes');
 const app = express();
 
 // Middleware
-app.use(cors());
+// ONLY allow requests from your Vercel frontend and your local testing environment
+app.use(cors({
+  origin: [
+    'https://your-agricomply-ai.vercel.app', // <-- REPLACE THIS WITH YOUR ACTUAL VERCEL URL
+    'http://localhost:5173',                 // Allows your local Vite server to still work
+    'http://localhost:3000'                  // Fallback local port
+  ],
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Routes
@@ -24,6 +33,6 @@ app.use('/api/growth', trackBRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });
