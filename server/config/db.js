@@ -1,15 +1,16 @@
-const mysql = require('mysql2');
+const { Pool } = require('pg');
 require('dotenv').config();
 
-const pool = mysql.createPool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'root',
-  password: process.env.DB_PASSWORD || 'your_password',
-  database: process.env.DB_NAME || 'agricomply_db',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
+// PostgreSQL connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  // Required for Railway/production SSL connections
+  ssl: {
+    rejectUnauthorized: false 
+  }
 });
 
-// CRITICAL: Export pool.promise()
-module.exports = pool.promise();
+// We export the pool directly. 
+// With 'pg', the pool itself has a .query() method, 
+// so no need for .promise() anymore!
+module.exports = pool;
