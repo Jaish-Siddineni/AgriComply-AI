@@ -1,3 +1,4 @@
+# Force fresh install
 annotated-types==0.7.0
 anyio==4.12.1
 blinker==1.9.0
@@ -8,7 +9,7 @@ click==8.3.1
 colorama==0.4.6
 cryptography==46.0.4
 distro==1.9.0
-faiss-cpu==1.9.0
+faiss-cpu
 Flask==3.1.2
 flask-cors==6.0.2
 google-auth==2.48.0
